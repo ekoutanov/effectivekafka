@@ -1,0 +1,67 @@
+plugins {
+}
+
+def baseJvmArgs = [
+  "--add-opens=java.base/java.io=ALL-UNNAMED",
+  "--add-opens=java.base/java.lang=ALL-UNNAMED",
+  "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+  "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+  "--add-opens=java.base/java.nio=ALL-UNNAMED",
+  "--add-opens=java.base/java.nio.charset=ALL-UNNAMED",
+  "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
+  "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+  "-Djava.net.preferIPv4Stack=true"
+]
+project.ext.set("baseJvmArgs", baseJvmArgs)
+
+allprojects {
+  apply plugin: "java"
+  
+  sourceCompatibility = 11 
+  targetCompatibility = 11
+
+  repositories {
+    jcenter()
+    maven {
+      url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+  }
+  
+  ext {
+    junitVersion = "4.12"
+    kafkaVersion = "2.4.0"
+    log4jVersion = "1.2.17"
+    slf4jVersion = "1.7.25"
+  }
+  
+  dependencies {
+    implementation "org.slf4j:slf4j-api:${slf4jVersion}"
+    implementation "org.slf4j:slf4j-log4j12:${slf4jVersion}"
+    implementation "log4j:log4j:${log4jVersion}"
+    testImplementation "junit:junit:${junitVersion}"
+  }
+  
+  compileJava {
+    options.compilerArgs += "-proc:none"
+  }
+
+  compileTestJava {
+    options.compilerArgs += "-proc:none"
+  }
+  
+  tasks.withType(JavaCompile) {
+    options.fork = true
+    options.incremental = true
+  }
+
+  test {
+    jvmArgs += baseJvmArgs
+  }
+}
+
+subprojects {
+}
+
+dependencies {
+  implementation "org.apache.kafka:kafka-clients:${kafkaVersion}"
+}
