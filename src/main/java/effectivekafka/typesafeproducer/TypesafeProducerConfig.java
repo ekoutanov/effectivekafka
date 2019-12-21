@@ -11,13 +11,25 @@ import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.*;
 
 public final class TypesafeProducerConfig {
+  public static final class UnsupportedPropertyException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
+    
+    private UnsupportedPropertyException(String s) { super(s); }
+  }
+  
+  public static final class ConflictingPropertyException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
+    
+    private ConflictingPropertyException(String s) { super(s); }
+  }
+  
   private String bootstrapServers;
   
   private Class<? extends Serializer<?>> keySerializerClass;
   
   private Class<? extends Serializer<?>> valueSerializerClass;
   
-  private Map<String, Object> customEntries = new HashMap<>();
+  private final Map<String, Object> customEntries = new HashMap<>();
   
   public TypesafeProducerConfig withBootstrapServers(String bootstrapServers) {
     this.bootstrapServers = bootstrapServers;
@@ -39,17 +51,11 @@ public final class TypesafeProducerConfig {
     customEntries.put(propertyName, value);
     return this;
   }
-  
-  public static final class UnsupportedPropertyException extends RuntimeException {
-    private static final long serialVersionUID = 1L;
-    
-    private UnsupportedPropertyException(String s) { super(s); }
-  }
 
   public Map<String, Object> mapify() {
-    final var staging = new HashMap<String, Object>();
+    final var stagingConfig = new HashMap<String, Object>();
     if (! customEntries.isEmpty()) {
-      final var supportedKeys = scanClassesForKeys(CommonClientConfigs.class, ProducerConfig.class);
+      final var supportedKeys = scanClassesForPropertyNames(CommonClientConfigs.class, ProducerConfig.class);
       final var unsupportedKey = customEntries.keySet()
           .stream()
           .filter(not(supportedKeys::contains))
@@ -59,23 +65,17 @@ public final class TypesafeProducerConfig {
         throw new UnsupportedPropertyException("Unsupported property " + unsupportedKey.get());
       }
       
-      staging.putAll(customEntries);
+      stagingConfig.putAll(customEntries);
     }
 
     Objects.requireNonNull(bootstrapServers, "Bootstrap servers not set");
-    tryInsertEntry(staging, CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+    tryInsertEntry(stagingConfig, CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
     Objects.requireNonNull(keySerializerClass, "Key serializer not set");
-    tryInsertEntry(staging, ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, keySerializerClass.getName());
+    tryInsertEntry(stagingConfig, ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, keySerializerClass.getName());
     Objects.requireNonNull(valueSerializerClass, "Value serializer not set");
-    tryInsertEntry(staging, ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, valueSerializerClass.getName());
+    tryInsertEntry(stagingConfig, ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, valueSerializerClass.getName());
     
-    return staging;
-  }
-  
-  public static final class OverriddenPropertyException extends RuntimeException {
-    private static final long serialVersionUID = 1L;
-    
-    private OverriddenPropertyException(String s) { super(s); }
+    return stagingConfig;
   }
   
   private static void tryInsertEntry(Map<String, Object> staging, String key, Object value) {
@@ -83,25 +83,24 @@ public final class TypesafeProducerConfig {
       if (existingValue == null) {
         return value;
       } else {
-        throw new OverriddenPropertyException("Property " + key + " cannot be overridden");
+        throw new ConflictingPropertyException("Property " + key + " conflicts with an expected property");
       }
     });
   }
   
-  private static Set<String> scanClassesForKeys(Class<?>... classes) {
+  private static Set<String> scanClassesForPropertyNames(Class<?>... classes) {
     return Arrays.stream(classes)
         .map(Class::getFields)
         .flatMap(Arrays::stream)
-        .filter(TypesafeProducerConfig::isFieldPublicConstant)
+        .filter(TypesafeProducerConfig::isFieldConstant)
         .filter(TypesafeProducerConfig::isFieldStringType)
         .filter(not(TypesafeProducerConfig::isFieldDoc))
         .map(TypesafeProducerConfig::retrieveField)
         .collect(Collectors.toSet());
   }
   
-  private static boolean isFieldPublicConstant(Field field) {
-    final var modifiers = field.getModifiers();
-    return Modifier.isFinal(modifiers) && Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers);
+  private static boolean isFieldConstant(Field field) {
+    return Modifier.isFinal(field.getModifiers()) && Modifier.isStatic(field.getModifiers());
   }
   
   private static boolean isFieldStringType(Field field) {

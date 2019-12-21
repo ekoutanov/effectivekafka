@@ -17,7 +17,9 @@ public final class TypesafeProducerConfigTest {
     final var config = new TypesafeProducerConfig();
     Assertions.assertThatThrownBy(() -> {
       config.mapify();
-    }).isExactlyInstanceOf(NullPointerException.class).hasMessageContaining("Bootstrap servers not set");
+    })
+    .isExactlyInstanceOf(NullPointerException.class)
+    .hasMessageContaining("Bootstrap servers not set");
   }
   
   @Test
@@ -58,7 +60,9 @@ public final class TypesafeProducerConfigTest {
     
     Assertions.assertThatThrownBy(() -> {
       config.mapify();
-    }).isExactlyInstanceOf(OverriddenPropertyException.class).hasMessageContaining("Property key.serializer cannot be overridden");
+    })
+    .isExactlyInstanceOf(ConflictingPropertyException.class)
+    .hasMessageContaining("Property key.serializer conflicts with an expected property");
   }
   
   @Test
@@ -71,6 +75,8 @@ public final class TypesafeProducerConfigTest {
     
     Assertions.assertThatThrownBy(() -> {
       config.mapify();
-    }).isExactlyInstanceOf(UnsupportedPropertyException.class).hasMessageContaining("Unsupported property foo.bar");
+    })
+    .isExactlyInstanceOf(UnsupportedPropertyException.class)
+    .hasMessageContaining("Unsupported property foo.bar");
   }
 }
