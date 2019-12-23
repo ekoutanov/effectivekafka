@@ -55,7 +55,7 @@ public final class TypesafeProducerConfig {
   public Map<String, Object> mapify() {
     final var stagingConfig = new HashMap<String, Object>();
     if (! customEntries.isEmpty()) {
-      final var supportedKeys = scanClassesForPropertyNames(CommonClientConfigs.class, ProducerConfig.class);
+      final var supportedKeys = scanClassForPropertyNames(ProducerConfig.class);
       final var unsupportedKey = customEntries.keySet()
           .stream()
           .filter(not(supportedKeys::contains))
@@ -88,10 +88,8 @@ public final class TypesafeProducerConfig {
     });
   }
   
-  private static Set<String> scanClassesForPropertyNames(Class<?>... classes) {
-    return Arrays.stream(classes)
-        .map(Class::getFields)
-        .flatMap(Arrays::stream)
+  private static Set<String> scanClassForPropertyNames(Class<?> cls) {
+    return Arrays.stream(cls.getFields())
         .filter(TypesafeProducerConfig::isFieldConstant)
         .filter(TypesafeProducerConfig::isFieldStringType)
         .filter(not(TypesafeProducerConfig::isFieldDoc))

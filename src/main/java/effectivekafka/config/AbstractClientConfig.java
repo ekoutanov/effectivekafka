@@ -31,7 +31,7 @@ public abstract class AbstractClientConfig<C extends AbstractClientConfig<?>> {
   public final Map<String, Object> mapify() {
     final var stagingConfig = new HashMap<String, Object>();
     if (! customEntries.isEmpty()) {
-      final var supportedKeys = scanClassesForPropertyNames(getValidationClasses());
+      final var supportedKeys = scanClassForPropertyNames(getValidationClass());
       final var unsupportedKey = customEntries.keySet()
           .stream()
           .filter(not(supportedKeys::contains))
@@ -66,14 +66,12 @@ public abstract class AbstractClientConfig<C extends AbstractClientConfig<?>> {
     }
   }
   
-  protected abstract Class<?>[] getValidationClasses();
+  protected abstract Class<?> getValidationClass();
   
   protected abstract void appendExpectedEntries(ExpectedEntryAppender expectedEntries);
   
-  private static Set<String> scanClassesForPropertyNames(Class<?>... classes) {
-    return Arrays.stream(classes)
-        .map(Class::getFields)
-        .flatMap(Arrays::stream)
+  private static Set<String> scanClassForPropertyNames(Class<?> cls) {
+    return Arrays.stream(cls.getFields())
         .filter(AbstractClientConfig::isFieldConstant)
         .filter(AbstractClientConfig::isFieldStringType)
         .filter(not(AbstractClientConfig::isFieldDoc))

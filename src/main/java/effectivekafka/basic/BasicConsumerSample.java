@@ -12,7 +12,8 @@ public final class BasicConsumerSample {
     consumerProps.setProperty("bootstrap.servers", "localhost:9092");
     consumerProps.setProperty("key.deserializer", StringDeserializer.class.getName());
     consumerProps.setProperty("value.deserializer", StringDeserializer.class.getName());
-    consumerProps.setProperty("group.id", "myGroup");
+    consumerProps.setProperty("client.id", "myGroup");
+    consumerProps.setProperty("group.id", "basic-consumer-sample");
     consumerProps.setProperty("auto.offset.reset", "earliest");
     consumerProps.setProperty("enable.auto.commit", String.valueOf(false));
     

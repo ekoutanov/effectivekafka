@@ -11,6 +11,7 @@ public final class TypesafeProducerSample {
         .withBootstrapServers("localhost:9092")
         .withKeySerializerClass(StringSerializer.class)
         .withValueSerializerClass(StringSerializer.class)
+        .withCustomEntry(ProducerConfig.CLIENT_ID_CONFIG, "typesafe-sample")
         .withCustomEntry(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 1);
 
     try (Producer<String, String> producer = new KafkaProducer<>(config.mapify())) {

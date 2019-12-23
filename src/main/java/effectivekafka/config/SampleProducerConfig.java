@@ -29,8 +29,8 @@ public final class SampleProducerConfig extends AbstractClientConfig<SampleProdu
   }
 
   @Override
-  protected Class<?>[] getValidationClasses() {
-    return new Class<?>[] {CommonClientConfigs.class, ProducerConfig.class};
+  protected Class<?> getValidationClass() {
+    return ProducerConfig.class;
   }
 
   @Override
