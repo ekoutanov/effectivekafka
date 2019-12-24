@@ -4,6 +4,7 @@ import java.util.*;
 
 import org.apache.kafka.clients.*;
 import org.apache.kafka.clients.producer.*;
+import org.apache.kafka.common.config.*;
 import org.apache.kafka.common.serialization.*;
 
 public final class SampleProducerConfig extends AbstractClientConfig<SampleProducerConfig> {
@@ -29,8 +30,8 @@ public final class SampleProducerConfig extends AbstractClientConfig<SampleProdu
   }
 
   @Override
-  protected Class<?> getValidationClass() {
-    return ProducerConfig.class;
+  protected Class<?>[] getValidationClasses() {
+    return new Class<?>[] {SecurityConfig.class, SaslConfigs.class, ProducerConfig.class};
   }
 
   @Override

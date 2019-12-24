@@ -8,6 +8,7 @@ import java.util.stream.*;
 
 import org.apache.kafka.clients.*;
 import org.apache.kafka.clients.producer.*;
+import org.apache.kafka.common.config.*;
 import org.apache.kafka.common.serialization.*;
 
 public final class TypesafeProducerConfig {
@@ -55,7 +56,7 @@ public final class TypesafeProducerConfig {
   public Map<String, Object> mapify() {
     final var stagingConfig = new HashMap<String, Object>();
     if (! customEntries.isEmpty()) {
-      final var supportedKeys = scanClassForPropertyNames(ProducerConfig.class);
+      final var supportedKeys = scanClassesForPropertyNames(SecurityConfig.class, SaslConfigs.class, ProducerConfig.class);
       final var unsupportedKey = customEntries.keySet()
           .stream()
           .filter(not(supportedKeys::contains))
@@ -88,8 +89,10 @@ public final class TypesafeProducerConfig {
     });
   }
   
-  private static Set<String> scanClassForPropertyNames(Class<?> cls) {
-    return Arrays.stream(cls.getFields())
+  private static Set<String> scanClassesForPropertyNames(Class<?>... classes) {
+    return Arrays.stream(classes)
+        .map(Class::getFields)
+        .flatMap(Arrays::stream)
         .filter(TypesafeProducerConfig::isFieldConstant)
         .filter(TypesafeProducerConfig::isFieldStringType)
         .filter(not(TypesafeProducerConfig::isFieldDoc))
