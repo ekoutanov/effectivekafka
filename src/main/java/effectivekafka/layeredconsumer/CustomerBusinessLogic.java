@@ -1,4 +1,4 @@
-package effectivekafka.receiver;
+package effectivekafka.layeredconsumer;
 
 import java.io.*;
 

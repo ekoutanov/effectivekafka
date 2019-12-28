@@ -1,4 +1,4 @@
-package effectivekafka.receiver;
+package effectivekafka.layeredconsumer;
 
 @FunctionalInterface
 public interface EventListener {

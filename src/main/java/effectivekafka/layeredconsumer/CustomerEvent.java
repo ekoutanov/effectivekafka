@@ -1,3 +1,3 @@
-package effectivekafka.receiver;
+package effectivekafka.layeredconsumer;
 
 public abstract class CustomerEvent {}
