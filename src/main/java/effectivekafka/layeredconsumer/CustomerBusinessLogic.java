@@ -1,21 +1,13 @@
 package effectivekafka.layeredconsumer;
 
-import java.io.*;
+import effectivekafka.layeredconsumer.event.*;
 
-public final class CustomerBusinessLogic implements Closeable {
-  private final EventReceiver receiver;
-  
+public final class CustomerBusinessLogic {
   public CustomerBusinessLogic(EventReceiver receiver) {
-    this.receiver = receiver;
     receiver.addListener(this::onEvent);
   }
   
   private void onEvent(CustomerEvent event, ReceiveError error) {
-    // do something with event 
-  }
-  
-  @Override
-  public void close() {
-    receiver.close();
+    System.out.format("Received %s%n", event);
   }
 }
