@@ -9,8 +9,6 @@ import org.apache.kafka.common.serialization.*;
 
 import com.obsidiandynamics.worker.*;
 
-import effectivekafka.layeredconsumer.event.*;
-
 public final class DirectReceiver extends AbstractReceiver {
   private final WorkerThread poller;
   
@@ -53,8 +51,7 @@ public final class DirectReceiver extends AbstractReceiver {
     
     if (! records.isEmpty()) {
       for (var record : records) {
-        final var unmarshalled = CustomerUnmarshaller.unmarshal(record);
-        fire(unmarshalled.getEvent(), unmarshalled.getError());
+        fire(ReceivedEvent.unmarshal(record));
       }
       consumer.commitAsync();
     }

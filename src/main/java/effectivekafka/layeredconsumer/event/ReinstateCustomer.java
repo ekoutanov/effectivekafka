@@ -4,7 +4,7 @@ import java.util.*;
 
 import com.fasterxml.jackson.annotation.*;
 
-public final class ReinstateCustomer extends CustomerEvent {
+public final class ReinstateCustomer extends CustomerPayload {
   static final String TYPE = "REINSTATE_CUSTOMER";
   
   public ReinstateCustomer(@JsonProperty("id") UUID id) {

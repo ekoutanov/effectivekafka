@@ -11,11 +11,11 @@ import com.fasterxml.jackson.annotation.*;
   @JsonSubTypes.Type(value=SuspendCustomer.class, name=SuspendCustomer.TYPE),
   @JsonSubTypes.Type(value=ReinstateCustomer.class, name=ReinstateCustomer.TYPE)
 })
-public abstract class CustomerEvent {
+public abstract class CustomerPayload {
   @JsonProperty
   private final UUID id;
   
-  CustomerEvent(UUID id) {
+  CustomerPayload(UUID id) {
     this.id = id;
   }
   

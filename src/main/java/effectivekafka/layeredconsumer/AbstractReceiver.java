@@ -3,9 +3,6 @@ package effectivekafka.layeredconsumer;
 import java.util.*;
 import java.util.concurrent.*;
 
-import effectivekafka.layeredconsumer.EventListener;
-import effectivekafka.layeredconsumer.event.*;
-
 public abstract class AbstractReceiver implements EventReceiver {
   private final Set<EventListener> listeners = new CopyOnWriteArraySet<>();
   
@@ -13,9 +10,9 @@ public abstract class AbstractReceiver implements EventReceiver {
     listeners.add(listener);
   }
   
-  protected final void fire(CustomerEvent event, ReceiveError error) {
+  protected final void fire(ReceivedEvent event) {
     for (var listener : listeners) {
-      listener.onEvent(event, error);
+      listener.onEvent(event);
     }
   }
 }

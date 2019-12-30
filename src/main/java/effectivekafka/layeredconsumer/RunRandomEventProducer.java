@@ -23,7 +23,7 @@ public final class RunRandomEventProducer {
     
     try (var producer = new KafkaProducer<String, String>(config)) {
       final var sender = new Object() {
-        void send(CustomerEvent event) throws JsonProcessingException {
+        void send(CustomerPayload event) throws JsonProcessingException {
           final var eventJson = objectMapper.writeValueAsString(event);
           System.out.format("Publishing %s%n", eventJson);
           producer.send(new ProducerRecord<>(topic, event.getId().toString(), eventJson));

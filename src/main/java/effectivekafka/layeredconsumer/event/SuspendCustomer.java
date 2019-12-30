@@ -4,7 +4,7 @@ import java.util.*;
 
 import com.fasterxml.jackson.annotation.*;
 
-public final class SuspendCustomer extends CustomerEvent {
+public final class SuspendCustomer extends CustomerPayload {
   static final String TYPE = "SUSPEND_CUSTOMER";
   
   public SuspendCustomer(@JsonProperty("id") UUID id) {

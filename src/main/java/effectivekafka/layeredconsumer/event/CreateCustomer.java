@@ -4,7 +4,7 @@ import java.util.*;
 
 import com.fasterxml.jackson.annotation.*;
 
-public final class CreateCustomer extends CustomerEvent {
+public final class CreateCustomer extends CustomerPayload {
   static final String TYPE = "CREATE_CUSTOMER";
 
   @JsonProperty

@@ -12,8 +12,10 @@ import org.apache.kafka.common.serialization.*;
 import com.obsidiandynamics.worker.*;
 import com.obsidiandynamics.worker.Terminator;
 
-public final class PipelinedReceiver extends AbstractReceiver {
+public final class TriplePipelinedReceiver extends AbstractReceiver {
   private final WorkerThread ioThread;
+  
+  private final WorkerThread unmarshallingThread;
   
   private final WorkerThread processingThread;
   
@@ -21,16 +23,19 @@ public final class PipelinedReceiver extends AbstractReceiver {
   
   private final Duration pollTimeout;
   
-  private final BlockingQueue<ConsumerRecord<String, String>> queue;
+  private final BlockingQueue<ConsumerRecord<String, String>> fetchedRecords;
+  
+  private final BlockingQueue<ReceivedEvent> unmarshalledRecords;
   
   private final Queue<Map<TopicPartition, OffsetAndMetadata>> pendingOffsets = new LinkedBlockingQueue<>();
   
-  public PipelinedReceiver(Map<String, Object> consumerConfig, 
-                           String topic, 
-                           Duration pollTimeout, 
-                           int queueCapacity) {
+  public TriplePipelinedReceiver(Map<String, Object> consumerConfig, 
+                                 String topic, 
+                                 Duration pollTimeout, 
+                                 int queueCapacity) {
     this.pollTimeout = pollTimeout;
-    queue = new LinkedBlockingQueue<>(queueCapacity);
+    fetchedRecords = new LinkedBlockingQueue<>(queueCapacity);
+    unmarshalledRecords = new LinkedBlockingQueue<>(queueCapacity);
     
     final var combinedConfig = new HashMap<String, Object>();
     combinedConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
@@ -41,12 +46,17 @@ public final class PipelinedReceiver extends AbstractReceiver {
     consumer.subscribe(Set.of(topic));
     
     ioThread = WorkerThread.builder()
-        .withOptions(new WorkerOptions().daemon().withName(PipelinedReceiver.class, "io"))
+        .withOptions(new WorkerOptions().daemon().withName(TriplePipelinedReceiver.class, "io"))
         .onCycle(this::onIoCycle)
         .build();
     
+    unmarshallingThread = WorkerThread.builder()
+        .withOptions(new WorkerOptions().daemon().withName(TriplePipelinedReceiver.class, "unmarshal"))
+        .onCycle(this::onUnmarshalCycle)
+        .build();
+    
     processingThread = WorkerThread.builder()
-        .withOptions(new WorkerOptions().daemon().withName(PipelinedReceiver.class, "processor"))
+        .withOptions(new WorkerOptions().daemon().withName(TriplePipelinedReceiver.class, "processor"))
         .onCycle(this::onProcessorCycle)
         .build();
   }
@@ -54,6 +64,7 @@ public final class PipelinedReceiver extends AbstractReceiver {
   @Override
   public void start() {
     ioThread.start();
+    unmarshallingThread.start();
     processingThread.start();
   }
   
@@ -68,7 +79,7 @@ public final class PipelinedReceiver extends AbstractReceiver {
     
     if (! records.isEmpty()) {
       for (var record : records) {
-        queue.put(record);
+        fetchedRecords.put(record);
       }
     }
     
@@ -78,16 +89,23 @@ public final class PipelinedReceiver extends AbstractReceiver {
     }
   }
   
+  private void onUnmarshalCycle(WorkerThread t) throws InterruptedException {
+    final var record = fetchedRecords.take();
+    final var unmarshalled = ReceivedEvent.unmarshal(record);
+    unmarshalledRecords.put(unmarshalled);
+  }
+  
   private void onProcessorCycle(WorkerThread t) throws InterruptedException {
-    final var record = queue.take();
-    fire(ReceivedEvent.unmarshal(record));
+    final var unmarshalled = unmarshalledRecords.take();
+    fire(unmarshalled);
+    final var record = unmarshalled.getRecord();
     pendingOffsets.add(Map.of(new TopicPartition(record.topic(), record.partition()), 
                               new OffsetAndMetadata(record.offset() + 1)));
   }
   
   @Override
   public void close() {
-    Terminator.of(ioThread, processingThread).terminate().joinSilently();
+    Terminator.of(ioThread, unmarshallingThread, processingThread).terminate().joinSilently();
     consumer.close();
   }
 }
