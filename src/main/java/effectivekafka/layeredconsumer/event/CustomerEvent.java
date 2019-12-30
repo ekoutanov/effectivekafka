@@ -6,7 +6,10 @@ import com.fasterxml.jackson.annotation.*;
 
 @JsonTypeInfo(use=JsonTypeInfo.Id.NAME, include=JsonTypeInfo.As.EXISTING_PROPERTY, property="type")
 @JsonSubTypes({
-  @JsonSubTypes.Type(value=CreateCustomerEvent.class, name=CreateCustomerEvent.TYPE) 
+  @JsonSubTypes.Type(value=CreateCustomer.class, name=CreateCustomer.TYPE),
+  @JsonSubTypes.Type(value=UpdateCustomer.class, name=UpdateCustomer.TYPE),
+  @JsonSubTypes.Type(value=SuspendCustomer.class, name=SuspendCustomer.TYPE),
+  @JsonSubTypes.Type(value=ReinstateCustomer.class, name=ReinstateCustomer.TYPE)
 })
 public abstract class CustomerEvent {
   @JsonProperty
@@ -18,7 +21,7 @@ public abstract class CustomerEvent {
   
   public abstract String getType();
   
-  public UUID getId() {
+  public final UUID getId() {
     return id;
   }
   
