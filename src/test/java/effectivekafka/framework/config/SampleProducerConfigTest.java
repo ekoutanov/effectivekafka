@@ -9,7 +9,6 @@ import org.apache.kafka.common.serialization.*;
 import org.assertj.core.api.*;
 import org.junit.*;
 
-import effectivekafka.framework.config.*;
 import effectivekafka.framework.config.AbstractClientConfig.*;
 
 public final class SampleProducerConfigTest {

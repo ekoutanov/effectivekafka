@@ -7,22 +7,21 @@ import effectivekafka.customerevents.event.*;
 public final class ReceiveEvent {
   private final CustomerPayload payload;
   
-  private final ConsumerRecord<String, String> record;
-  
   private final Throwable error;
+  
+  private final ConsumerRecord<String, ?> record;
+  
+  private final String encodedValue;
 
-  private ReceiveEvent(CustomerPayload payload, ConsumerRecord<String, String> record, Throwable error) {
-    this.payload = payload;
+  public ReceiveEvent(CustomerPayload payload, Throwable error, ConsumerRecord<String, ?> record, String encodedValue) {
     this.record = record;
+    this.payload = payload;
     this.error = error;
+    this.encodedValue = encodedValue;
   }
 
   public CustomerPayload getPayload() {
     return payload;
-  }
-
-  public ConsumerRecord<String, String> getRecord() {
-    return record;
   }
   
   public boolean isError() {
@@ -33,16 +32,17 @@ public final class ReceiveEvent {
     return error;
   }
 
+  public ConsumerRecord<String, ?> getRecord() {
+    return record;
+  }
+  
+  public String getEncodedValue() {
+    return encodedValue;
+  }
+
   @Override
   public String toString() {
-    return ReceiveEvent.class.getSimpleName() + " [payload=" + payload + ", record=" + record + ", error=" + error + "]";
-  }
-  
-  public static ReceiveEvent success(CustomerPayload payload, ConsumerRecord<String, String> record) {
-    return new ReceiveEvent(payload, record, null);
-  }
-  
-  public static ReceiveEvent error(Throwable error, ConsumerRecord<String, String> record) {
-    return new ReceiveEvent(null, record, error);
+    return ReceiveEvent.class.getSimpleName() + " [payload=" + payload + ", error=" + error + 
+        ", record=" + record + ", encodedValue=" + encodedValue + "]";
   }
 }

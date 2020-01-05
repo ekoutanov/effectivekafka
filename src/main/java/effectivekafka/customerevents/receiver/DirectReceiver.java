@@ -12,7 +12,7 @@ import com.obsidiandynamics.worker.*;
 public final class DirectReceiver extends AbstractReceiver {
   private final WorkerThread pollingThread;
   
-  private final Consumer<String, String> consumer;
+  private final Consumer<String, CustomerPayloadOrError> consumer;
   
   private final Duration pollTimeout;
   
@@ -23,7 +23,7 @@ public final class DirectReceiver extends AbstractReceiver {
     
     final var combinedConfig = new HashMap<String, Object>();
     combinedConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-    combinedConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+    combinedConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomerPayloadDeserializer.class.getName());
     combinedConfig.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
     combinedConfig.putAll(consumerConfig);
     consumer = new KafkaConsumer<>(combinedConfig);
@@ -31,7 +31,7 @@ public final class DirectReceiver extends AbstractReceiver {
     
     pollingThread = WorkerThread.builder()
         .withOptions(new WorkerOptions().daemon().withName(DirectReceiver.class, "poller"))
-        .onCycle(this::onPollerCycle)
+        .onCycle(this::onPollCycle)
         .build();
   }
   
@@ -40,8 +40,8 @@ public final class DirectReceiver extends AbstractReceiver {
     pollingThread.start();
   }
   
-  private void onPollerCycle(WorkerThread t) throws InterruptedException {
-    final ConsumerRecords<String, String> records;
+  private void onPollCycle(WorkerThread t) throws InterruptedException {
+    final ConsumerRecords<String, CustomerPayloadOrError> records;
     
     try {
       records = consumer.poll(pollTimeout);
@@ -51,7 +51,12 @@ public final class DirectReceiver extends AbstractReceiver {
     
     if (! records.isEmpty()) {
       for (var record : records) {
-        fire(CustomerPayloadUnmarshaller.unmarshal(record));
+        final var payloadOrError = record.value();
+        final var event = new ReceiveEvent(payloadOrError.getPayload(), 
+                                           payloadOrError.getError(),
+                                           record,
+                                           payloadOrError.getEncodedValue());
+        fire(event);
       }
       consumer.commitAsync();
     }

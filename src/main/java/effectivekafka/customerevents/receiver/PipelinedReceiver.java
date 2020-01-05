@@ -13,15 +13,15 @@ import com.obsidiandynamics.worker.*;
 import com.obsidiandynamics.worker.Terminator;
 
 public final class PipelinedReceiver extends AbstractReceiver {
-  private final WorkerThread ioThread;
+  private final WorkerThread pollingThread;
   
   private final WorkerThread processingThread;
   
-  private final Consumer<String, String> consumer;
+  private final Consumer<String, CustomerPayloadOrError> consumer;
   
   private final Duration pollTimeout;
   
-  private final BlockingQueue<ConsumerRecord<String, String>> fetchedRecords;
+  private final BlockingQueue<ReceiveEvent> receivedEvents;
   
   private final Queue<Map<TopicPartition, OffsetAndMetadata>> pendingOffsets = new LinkedBlockingQueue<>();
   
@@ -30,35 +30,35 @@ public final class PipelinedReceiver extends AbstractReceiver {
                            Duration pollTimeout, 
                            int queueCapacity) {
     this.pollTimeout = pollTimeout;
-    fetchedRecords = new LinkedBlockingQueue<>(queueCapacity);
+    receivedEvents = new LinkedBlockingQueue<>(queueCapacity);
     
     final var combinedConfig = new HashMap<String, Object>();
     combinedConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-    combinedConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+    combinedConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomerPayloadDeserializer.class.getName());
     combinedConfig.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
     combinedConfig.putAll(consumerConfig);
     consumer = new KafkaConsumer<>(combinedConfig);
     consumer.subscribe(Set.of(topic));
     
-    ioThread = WorkerThread.builder()
-        .withOptions(new WorkerOptions().daemon().withName(PipelinedReceiver.class, "io"))
-        .onCycle(this::onIoCycle)
+    pollingThread = WorkerThread.builder()
+        .withOptions(new WorkerOptions().daemon().withName(PipelinedReceiver.class, "poller"))
+        .onCycle(this::onPollCycle)
         .build();
     
     processingThread = WorkerThread.builder()
         .withOptions(new WorkerOptions().daemon().withName(PipelinedReceiver.class, "processor"))
-        .onCycle(this::onProcessorCycle)
+        .onCycle(this::onProcessCycle)
         .build();
   }
   
   @Override
   public void start() {
-    ioThread.start();
+    pollingThread.start();
     processingThread.start();
   }
   
-  private void onIoCycle(WorkerThread t) throws InterruptedException {
-    final ConsumerRecords<String, String> records;
+  private void onPollCycle(WorkerThread t) throws InterruptedException {
+    final ConsumerRecords<String, CustomerPayloadOrError> records;
     
     try {
       records = consumer.poll(pollTimeout);
@@ -68,7 +68,9 @@ public final class PipelinedReceiver extends AbstractReceiver {
     
     if (! records.isEmpty()) {
       for (var record : records) {
-        fetchedRecords.put(record);
+        final var value = record.value();
+        final var event = new ReceiveEvent(value.getPayload(), value.getError(), record, value.getEncodedValue());
+        receivedEvents.put(event);
       }
     }
     
@@ -78,17 +80,17 @@ public final class PipelinedReceiver extends AbstractReceiver {
     }
   }
   
-  private void onProcessorCycle(WorkerThread t) throws InterruptedException {
-    final var record = fetchedRecords.take();
-    final var unmarshalled = CustomerPayloadUnmarshaller.unmarshal(record);
-    fire(unmarshalled);
+  private void onProcessCycle(WorkerThread t) throws InterruptedException {
+    final var event = receivedEvents.take();
+    fire(event);
+    final var record = event.getRecord();
     pendingOffsets.add(Map.of(new TopicPartition(record.topic(), record.partition()), 
                               new OffsetAndMetadata(record.offset() + 1)));
   }
   
   @Override
   public void close() {
-    Terminator.of(ioThread, processingThread).terminate().joinSilently();
+    Terminator.of(pollingThread, processingThread).terminate().joinSilently();
     consumer.close();
   }
 }

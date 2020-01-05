@@ -9,7 +9,7 @@ import org.apache.kafka.common.serialization.*;
 import effectivekafka.customerevents.event.*;
 
 public final class DirectSender implements EventSender {
-  private final Producer<String, String> producer;
+  private final Producer<String, CustomerPayload> producer;
   
   private final String topic;
 
@@ -18,15 +18,14 @@ public final class DirectSender implements EventSender {
     
     final var combinedConfig = new HashMap<String, Object>();
     combinedConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-    combinedConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+    combinedConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, CustomerPayloadSerializer.class.getName());
     combinedConfig.putAll(producerConfig);
     producer = new KafkaProducer<>(combinedConfig);
   }
 
   @Override
   public Future<RecordMetadata> send(CustomerPayload payload) {
-    final var record = CustomerPayloadMarshaller.marshal(topic, payload);
-    System.out.format("Publishing %s%n", payload);
+    final var record = new ProducerRecord<>(topic, payload.getId().toString(), payload);
     return producer.send(record);
   }
 
