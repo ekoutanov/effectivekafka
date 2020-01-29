@@ -7,18 +7,26 @@ import org.apache.kafka.common.serialization.*;
 
 public final class BasicProducerSample {
   public static void main(String[] args) throws InterruptedException {
-    final Map<String, Object> config = 
-        Map.of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092", 
-               ProducerConfig.CLIENT_ID_CONFIG, "basic-producer-sample",
+    final var topic = "getting-started";
+    
+    final var config = 
+        Map.<String, Object> of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092", 
                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName(), 
                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName(), 
-               ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 1);
+               ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
 
-    try (Producer<String, String> producer = new KafkaProducer<>(config)) {
+    try (var producer = new KafkaProducer<String, String>(config)) {
       while (true) {
-        final String value = new Date().toString();
+        final var key = "myKey";
+        final var value = new Date().toString();
         System.out.format("Publishing record with value %s%n", value);
-        producer.send(new ProducerRecord<>("test", "myKey", value));
+        
+        // publish the record, handling the metadata in the callback
+        producer.send(new ProducerRecord<>(topic, key, value), (metadata, exception) -> {
+          System.out.format("Published with metadata: %s, error: %s%n", metadata, exception);
+        });
+        
+        // wait before publishing another
         Thread.sleep(1000);
       }
     }
