@@ -8,20 +8,22 @@ import org.apache.kafka.common.serialization.*;
 
 public final class BasicConsumerSample {
   public static void main(String[] args) {
-    final Properties consumerProps = new Properties();
-    consumerProps.setProperty("bootstrap.servers", "localhost:9092");
-    consumerProps.setProperty("key.deserializer", StringDeserializer.class.getName());
-    consumerProps.setProperty("value.deserializer", StringDeserializer.class.getName());
-    consumerProps.setProperty("client.id", "myGroup");
-    consumerProps.setProperty("group.id", "basic-consumer-sample");
-    consumerProps.setProperty("auto.offset.reset", "earliest");
-    consumerProps.setProperty("enable.auto.commit", String.valueOf(false));
-    
-    try (Consumer<String, String> consumer = new KafkaConsumer<>(consumerProps)) {
-      consumer.subscribe(Collections.singleton("test"));
+    final var topic = "getting-started";
+
+    final var config = 
+        Map.<String, Object>of(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092", 
+                               ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName(), 
+                               ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName(), 
+                               ConsumerConfig.GROUP_ID_CONFIG, "basic-consumer-sample",
+                               ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
+                               ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+
+    try (var consumer = new KafkaConsumer<String, String>(config)) {
+      consumer.subscribe(Set.of(topic));
+
       while (true) {
-        final ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
-        for (ConsumerRecord<String, String> record : records) {
+        final var records = consumer.poll(Duration.ofMillis(100));
+        for (var record : records) {
           System.out.format("Got record with value %s%n", record.value());
         }
         consumer.commitAsync();
