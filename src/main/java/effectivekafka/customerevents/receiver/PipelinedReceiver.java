@@ -32,12 +32,12 @@ public final class PipelinedReceiver extends AbstractReceiver {
     this.pollTimeout = pollTimeout;
     receivedEvents = new LinkedBlockingQueue<>(queueCapacity);
     
-    final var combinedConfig = new HashMap<String, Object>();
-    combinedConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-    combinedConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomerPayloadDeserializer.class.getName());
-    combinedConfig.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-    combinedConfig.putAll(consumerConfig);
-    consumer = new KafkaConsumer<>(combinedConfig);
+    final var mergedConfig = new HashMap<String, Object>();
+    mergedConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+    mergedConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomerPayloadDeserializer.class.getName());
+    mergedConfig.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+    mergedConfig.putAll(consumerConfig);
+    consumer = new KafkaConsumer<>(mergedConfig);
     consumer.subscribe(Set.of(topic));
     
     pollingThread = WorkerThread.builder()
