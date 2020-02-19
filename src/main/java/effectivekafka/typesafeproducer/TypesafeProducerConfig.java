@@ -56,7 +56,11 @@ public final class TypesafeProducerConfig {
   public Map<String, Object> mapify() {
     final var stagingConfig = new HashMap<String, Object>();
     if (! customEntries.isEmpty()) {
-      final var supportedKeys = scanClassesForPropertyNames(SecurityConfig.class, SaslConfigs.class, ProducerConfig.class);
+      final var supportedKeys = scanClassesForPropertyNames(SecurityConfig.class, 
+                                                            SslConfigs.class,
+                                                            SaslConfigs.class, 
+                                                            ProducerConfig.class,
+                                                            CommonClientConfigs.class);
       final var unsupportedKey = customEntries.keySet()
           .stream()
           .filter(not(supportedKeys::contains))
