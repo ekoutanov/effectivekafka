@@ -9,19 +9,22 @@ import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.config.*;
 import org.apache.kafka.common.serialization.*;
 
-public final class SslProducerSample {
+public final class SslMutualProducerSample {
   public static void main(String[] args) throws InterruptedException {
     final var topic = "getting-started";
 
-    final Map<String, Object> config = 
-        Map.of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9093", 
-               CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL",
-               SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "https",
-               SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, "client.truststore.jks",
-               SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "secret",
-               ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName(), 
-               ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName(), 
-               ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+    final var config = new HashMap<String, Object>();
+    config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9093");
+    config.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL");
+    config.put(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "https");
+    config.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, "client.truststore.jks");
+    config.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "secret");
+    config.put(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, "client.keystore.jks");
+    config.put(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, "secret");
+    config.put(SslConfigs.SSL_KEY_PASSWORD_CONFIG, "secret");
+    config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+    config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+    config.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
 
     try (var producer = new KafkaProducer<String, String>(config)) {
       while (true) {

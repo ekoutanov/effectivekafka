@@ -17,9 +17,9 @@ public final class SslConsumerSample {
     final Map<String, Object> config = 
         Map.of(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9093", 
                CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL",
-               SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "",
+               SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "https",
                SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, "client.truststore.jks",
-               SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "test1234",
+               SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "secret",
                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName(), 
                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName(), 
                ConsumerConfig.GROUP_ID_CONFIG, "basic-consumer-sample",
