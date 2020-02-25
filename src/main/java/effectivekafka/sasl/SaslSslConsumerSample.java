@@ -22,8 +22,8 @@ public final class SaslSslConsumerSample {
         + "password=\"alice-secret\";";
 
     final var config = new HashMap<String, Object>();
-    config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9093");
-    config.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL");
+    config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9094");
+    config.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_SSL");
     config.put(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "https");
     config.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, "client.truststore.jks");
     config.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "secret");
