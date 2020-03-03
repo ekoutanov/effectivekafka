@@ -1,5 +1,7 @@
 package effectivekafka.quota;
 
+import static java.lang.System.*;
+
 import java.util.*;
 
 import org.apache.kafka.clients.*;
@@ -9,7 +11,7 @@ import org.apache.kafka.common.config.*;
 import org.apache.kafka.common.security.scram.*;
 import org.apache.kafka.common.serialization.*;
 
-public final class QuotaProducerSample {
+public final class BufferedQuotaProducerSample {
   public static void main(String[] args) throws InterruptedException {
     final var topic = "volume-test";
 
@@ -28,6 +30,7 @@ public final class QuotaProducerSample {
     config.put(SaslConfigs.SASL_MECHANISM, "SCRAM-SHA-512");
     config.put(SaslConfigs.SASL_JAAS_CONFIG, saslJaasConfig);
     config.put(ProducerConfig.CLIENT_ID_CONFIG, "pump");
+    config.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 100_000);
     config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
     config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
@@ -43,12 +46,17 @@ public final class QuotaProducerSample {
           if (exception != null) exception.printStackTrace();
         };
 
-        final var start = System.currentTimeMillis();
-        producer.send(new ProducerRecord<>(topic, KEY, VALUE), callback);
-        final var took = System.currentTimeMillis() - start;
-        if (took > 10) System.out.format("Took %,d ms%n", took);
+        final var record = new ProducerRecord<>(topic, KEY, VALUE);
+        final var tookMs = sendTimed(producer, record, callback);
+        out.format("Blocked for %,d ms%n", tookMs);
         statsPrinter.maybePrintStats();
       }
     }
+  }
+  
+  private static long sendTimed(Producer<String, String> producer, ProducerRecord<String, String> record, Callback callback) {
+    final var start = System.currentTimeMillis();
+    producer.send(record, callback);
+    return System.currentTimeMillis() - start;
   }
 }
