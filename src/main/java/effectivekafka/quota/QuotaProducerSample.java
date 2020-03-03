@@ -29,7 +29,7 @@ public final class QuotaProducerSample {
             SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "secret",
             SaslConfigs.SASL_MECHANISM, "SCRAM-SHA-512",
             SaslConfigs.SASL_JAAS_CONFIG, saslJaasConfig,
-            ProducerConfig.CLIENT_ID_CONFIG, "",
+            ProducerConfig.CLIENT_ID_CONFIG, "pump",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName(), 
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
     
@@ -59,7 +59,7 @@ public final class QuotaProducerSample {
   }
   
   private interface BackpressureHandler {
-    void handle() throws InterruptedException;
+    void exert() throws InterruptedException;
   }
   
   private static class Backpressure {
@@ -78,7 +78,7 @@ public final class QuotaProducerSample {
     void maybeApply(BackpressureHandler handler) throws InterruptedException {
       if (pendingRecords.get() > MAX_PENDING_RECORDS) {
         do {
-          handler.handle();
+          handler.exert();
         } while (pendingRecords.get() > MAX_PENDING_RECORDS / 2);
       }
     }
