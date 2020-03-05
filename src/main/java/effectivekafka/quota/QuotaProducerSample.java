@@ -10,7 +10,9 @@ public final class QuotaProducerSample {
         .withBootstrapServers("localhost:9094")
         .withUsername("alice")
         .withPassword("alice-secret")
-        .withClientId("pump");
+        .withClientId("pump")
+        .withCustomEntry(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 
+                         600_000);
 
     final var props = config.mapify();
     try (var producer = new KafkaProducer<String, String>(props)) {
