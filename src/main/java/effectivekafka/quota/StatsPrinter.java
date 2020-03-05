@@ -21,7 +21,7 @@ final class StatsPrinter {
       final var elapsedTime = now - startTime;
       final var periodRecords = totalRecordCount - lastRecordCount;
       final var currentRate = rate(periodRecords, lastPrintAgo);
-      final var averageRate = rate(lastRecordCount, elapsedTime);
+      final var averageRate = rate(totalRecordCount, elapsedTime);
       out.printf("Elapsed: %,d s; " + 
                  "Rate: current %,.0f rec/s, average %,.0f rec/s%n",
                  elapsedTime / 1000, currentRate, averageRate);
