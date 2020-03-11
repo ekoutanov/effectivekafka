@@ -57,14 +57,14 @@ public final class TransformStage {
           
           // transactionally publish record and commit input offsets
           producer.beginTransaction();
-          producer.send(outRec);
           try {
+            producer.send(outRec);
             final var nextOffset = 
                 new OffsetAndMetadata(inRec.offset() + 1);
             final var offsets = Map.of(topicPartition, nextOffset);
             producer.sendOffsetsToTransaction(offsets, groupId);
             producer.commitTransaction();
-          } catch (RuntimeException e) {
+          } catch (KafkaException e) {
             producer.abortTransaction();
             throw e;
           }
